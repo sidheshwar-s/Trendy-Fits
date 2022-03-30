@@ -1,7 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-
 import 'package:get/get.dart';
-
+import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:trendy_fits/app/data/constants.dart';
 import '../controllers/home_controller.dart';
 
 class HomeView extends StatefulWidget {
@@ -13,9 +14,26 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   final HomeController controller = Get.find<HomeController>();
+  Barcode? result;
+  QRViewController? qrController;
+  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  @override
+  void reassemble() {
+    super.reassemble();
+    if (Platform.isAndroid) {
+      qrController!.pauseCamera();
+    }
+    qrController!.resumeCamera();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Trendy Fits"),
+        centerTitle: true,
+        backgroundColor: accentColor,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
