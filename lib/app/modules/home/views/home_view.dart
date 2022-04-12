@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:trendy_fits/app/data/constants.dart';
+import 'package:trendy_fits/app/modules/auth/controllers/auth_controller.dart';
 import '../controllers/home_controller.dart';
 
 class HomeView extends StatefulWidget {
@@ -24,6 +25,36 @@ class _HomeViewState extends State<HomeView> {
       qrController!.pauseCamera();
     }
     qrController!.resumeCamera();
+  }
+
+  Map<String, String> userActions = {
+    "pending@gmail.com": "Pending",
+    "processing@gmail.com": "Processing",
+    "cad@gmail.com": "Cad",
+    "cutting@gmail.com": "Cutting",
+    "sewing@gmail.com": "Sewing",
+    "finishing@gmail.com": "Finishing",
+    "readytoship@gmail.com": "Ready to Ship",
+    "delivered@gmail.com": "Delivered",
+    "shipped@gmail.com": "Shipped",
+  };
+
+  void _onQRViewCreated(QRViewController controller) {
+    qrController = controller;
+    controller.scannedDataStream.listen((scanData) {
+      setState(() {
+        result = scanData;
+      });
+      if (result != null) {
+        qrController?.dispose();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    qrController?.dispose();
+    super.dispose();
   }
 
   @override
@@ -57,10 +88,97 @@ class _HomeViewState extends State<HomeView> {
               const SizedBox(
                 height: 20,
               ),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  AnimatedOpacity(
+                    opacity: result != null ? 0 : 1.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: Center(
+                      child: SizedBox(
+                        height: 300,
+                        width: 300,
+                        child: QRView(
+                          key: qrKey,
+                          onQRViewCreated: _onQRViewCreated,
+                          overlay: QrScannerOverlayShape(
+                            borderColor: Colors.red,
+                            borderRadius: 10,
+                            borderLength: 30,
+                            borderWidth: 10,
+                            cutOutSize: (MediaQuery.of(context).size.width <
+                                        400 ||
+                                    MediaQuery.of(context).size.height < 400)
+                                ? 200.0
+                                : 400.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  AnimatedOpacity(
+                    opacity: result == null ? 0 : 1.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.red,
+                      ),
+                      child: const Icon(
+                        Icons.done,
+                        size: 100,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              if (result != null)
+                Column(
+                  children: [
+                    Text(
+                      "Are you sure you want to mark it as ${getActionString() ?? 'Done'}",
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    Row(
+                      children: [
+                        const Spacer(),
+                        OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            primary: Colors.red,
+                            side: const BorderSide(
+                              color: Colors.red,
+                            ),
+                          ),
+                          onPressed: () {},
+                          child: const Text("No"),
+                        ),
+                        const SizedBox(
+                          width: 20,
+                        ),
+                        ElevatedButton(
+                          onPressed: () {},
+                          child: const Text("Yes"),
+                        ),
+                        const Spacer(),
+                      ],
+                    )
+                  ],
+                )
             ],
           ),
         ),
       ),
     );
+  }
+
+  String? getActionString() {
+    AuthController authController = Get.find<AuthController>();
+    String? email = authController.email;
+    String? action = userActions[email];
+    return action;
   }
 }
