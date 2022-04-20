@@ -15,9 +15,11 @@ class AuthView extends GetView<AuthController> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                const Placeholder(
-                  fallbackHeight: 200,
-                  fallbackWidth: 100,
+                const SizedBox(
+                  height: 100,
+                ),
+                Image.asset(
+                  'assets/track tech solution.png',
                 ),
                 const SizedBox(
                   height: 30,
@@ -71,7 +73,7 @@ class AuthView extends GetView<AuthController> {
                   ),
                 ),
                 const SizedBox(
-                  height: 10,
+                  height: 20,
                 ),
                 Row(
                   children: [

@@ -15,7 +15,7 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   final HomeController controller = Get.find<HomeController>();
-  Barcode? result;
+  final AuthController authController = Get.find<AuthController>();
   QRViewController? qrController;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   @override
@@ -41,14 +41,13 @@ class _HomeViewState extends State<HomeView> {
 
   void _onQRViewCreated(QRViewController controller) {
     qrController = controller;
+    HomeController homeController = Get.find<HomeController>();
     controller.scannedDataStream.listen((scanData) {
-      setState(() {
-        result = scanData;
-      });
-      if (result != null) {
-        qrController?.dispose();
-      }
+      homeController.result.value = scanData;
     });
+    if (homeController.result.value != null) {
+      qrController?.dispose();
+    }
   }
 
   @override
@@ -64,6 +63,12 @@ class _HomeViewState extends State<HomeView> {
         title: const Text("Trendy Fits"),
         centerTitle: true,
         backgroundColor: accentColor,
+        actions: [
+          IconButton(
+            onPressed: () => authController.signOut(),
+            icon: const Icon(Icons.logout),
+          )
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -72,11 +77,11 @@ class _HomeViewState extends State<HomeView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Welcome Sidhesh",
+                "${controller.userRole[authController.email]} Sector",
                 style: Get.textTheme.headline4?.copyWith(color: Colors.black),
               ),
               const SizedBox(
-                height: 20,
+                height: 40,
               ),
               const Text(
                 "Please scan the QR code to continue",
@@ -88,86 +93,106 @@ class _HomeViewState extends State<HomeView> {
               const SizedBox(
                 height: 20,
               ),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  AnimatedOpacity(
-                    opacity: result != null ? 0 : 1.0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Center(
-                      child: SizedBox(
-                        height: 300,
-                        width: 300,
-                        child: QRView(
-                          key: qrKey,
-                          onQRViewCreated: _onQRViewCreated,
-                          overlay: QrScannerOverlayShape(
-                            borderColor: Colors.red,
-                            borderRadius: 10,
-                            borderLength: 30,
-                            borderWidth: 10,
-                            cutOutSize: (MediaQuery.of(context).size.width <
-                                        400 ||
-                                    MediaQuery.of(context).size.height < 400)
-                                ? 200.0
-                                : 400.0,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  AnimatedOpacity(
-                    opacity: result == null ? 0 : 1.0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.red,
-                      ),
-                      child: const Icon(
-                        Icons.done,
-                        size: 100,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )
-                ],
-              ),
-              if (result != null)
-                Column(
+              Obx(
+                () => Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Text(
-                      "Are you sure you want to mark it as ${getActionString() ?? 'Done'}",
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Row(
-                      children: [
-                        const Spacer(),
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            primary: Colors.red,
-                            side: const BorderSide(
-                              color: Colors.red,
+                    AnimatedOpacity(
+                      opacity: controller.result.value != null ? 0 : 1.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: Center(
+                        child: SizedBox(
+                          height: 300,
+                          width: 300,
+                          child: QRView(
+                            key: qrKey,
+                            onQRViewCreated: _onQRViewCreated,
+                            overlay: QrScannerOverlayShape(
+                              borderColor: Colors.red,
+                              borderRadius: 10,
+                              borderLength: 30,
+                              borderWidth: 10,
+                              cutOutSize: (MediaQuery.of(context).size.width <
+                                          400 ||
+                                      MediaQuery.of(context).size.height < 400)
+                                  ? 200.0
+                                  : 400.0,
                             ),
                           ),
-                          onPressed: () {},
-                          child: const Text("No"),
                         ),
-                        const SizedBox(
-                          width: 20,
+                      ),
+                    ),
+                    AnimatedOpacity(
+                      opacity: controller.result.value == null ? 0 : 1.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.red,
                         ),
-                        ElevatedButton(
-                          onPressed: () {},
-                          child: const Text("Yes"),
+                        child: const Icon(
+                          Icons.done,
+                          size: 100,
+                          color: Colors.white,
                         ),
-                        const Spacer(),
-                      ],
+                      ),
                     )
                   ],
-                )
+                ),
+              ),
+              Obx(() {
+                if (controller.result.value != null) {
+                  return Column(
+                    children: [
+                      Text(
+                        "Are you sure you want to mark it as ${getActionString() ?? 'Done'}",
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      Row(
+                        children: [
+                          const Spacer(),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              primary: Colors.red,
+                              side: const BorderSide(
+                                color: Colors.red,
+                              ),
+                            ),
+                            onPressed: () {
+                              controller.result.value = null;
+                            },
+                            child: const Text("No"),
+                          ),
+                          const SizedBox(
+                            width: 20,
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              controller.updatedProductStatus();
+                            },
+                            child: const Text("Yes"),
+                          ),
+                          if (controller.isLoading.value)
+                            Container(
+                              height: 10,
+                              width: 10,
+                              margin: const EdgeInsets.all(20),
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          const Spacer(),
+                        ],
+                      ),
+                    ],
+                  );
+                } else {
+                  return const SizedBox.shrink();
+                }
+              })
             ],
           ),
         ),
